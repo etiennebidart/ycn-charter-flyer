@@ -253,6 +253,13 @@
   .boat-list .empty{ font-size:14px; color:var(--muted); text-align:center; padding:18px 6px; }
   .panel-foot{ margin-top:16px; text-align:center; }
   .link-btn{ background:none; border:none; color:var(--teal-deep); text-decoration:underline; font-family:inherit; font-size:13px; cursor:pointer; }
+  .share-actions{ display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+  .share-actions button{
+    width:100%; padding:16px 18px; border-radius:14px; font-family:inherit; font-weight:700;
+    font-size:16px; letter-spacing:.4px; cursor:pointer; text-align:center;
+  }
+  .share-primary{ border:none; background:var(--teal); color:#fff; }
+  .share-secondary{ border:1.5px solid var(--teal); background:#fff; color:var(--teal-deep); }
   .actions button:hover{ transform:translateY(-2px); box-shadow:0 14px 36px rgba(14,116,125,.45); }
   .actions button:active{ transform:translateY(0); }
   .actions button.busy{ opacity:.6; pointer-events:none; }
@@ -394,6 +401,21 @@
     <button id="exportBtn">📤 Share Flyer</button>
   </div>
 
+  <!-- Share choices for the flyer PDF -->
+  <div id="sharePanel" class="panel" hidden>
+    <div class="panel-card">
+      <div class="panel-head">
+        <strong>Share flyer</strong>
+        <button class="panel-close" id="shareClose" aria-label="Close">✕</button>
+      </div>
+      <p class="panel-sub">On your phone, “Send to app” shows WhatsApp, WhatsApp Business, Mail, Messages and more automatically.</p>
+      <div class="share-actions">
+        <button id="shareSend" class="share-primary">📲 Send to app (WhatsApp, Mail…)</button>
+        <button id="shareSaveFiles" class="share-secondary">📁 Save to Files</button>
+      </div>
+    </div>
+  </div>
+
   <!-- On-device boat library (saved in this browser, works offline on phones) -->
   <div id="boatsPanel" class="panel" hidden>
     <div class="panel-card">
@@ -408,7 +430,7 @@
       </div>
       <div id="boatList" class="boat-list"></div>
       <div class="panel-foot">
-        <button id="downloadHtml" class="link-btn">Download editable file (.html)</button>
+        <button id="downloadHtml" class="link-btn">💾 Save an editable copy to Files (.html)</button>
       </div>
     </div>
   </div>
@@ -495,61 +517,78 @@
     if(e.dataTransfer.files[0]) loadImageInto(slot, e.dataTransfer.files[0]);
   });
 
-  /* ---------- PDF export (A4 portrait) ---------- */
-  const btn = document.getElementById('exportBtn');
-  btn.addEventListener('click', async () => {
+  /* ---------- Build the flyer PDF (reused by Share + Save to Files) ---------- */
+  async function buildFlyerPdf(){
     const flyer = document.getElementById('flyer');
-    btn.classList.add('busy');
-    const original = btn.textContent; btn.textContent = 'Generating…';
     const prevTransform = flyer.style.transform;
     flyer.style.transform = 'none';                 // capture at full size, ignore mobile scaling
     try{
       const canvas = await html2canvas(flyer, { scale:2, backgroundColor:'#f4f0e8', useCORS:true, logging:false });
       const { jsPDF } = window.jspdf;
-      // Custom page size that matches the flyer's exact proportions so the
-      // design fills 100% of the page with no white margins on any side.
+      // Custom page size matching the flyer's exact proportions → 100% bleed, no margins.
       const imgRatio = canvas.width / canvas.height;
-      const pageW = 595.28;            // A4 width in pt (keeps a print-friendly scale)
-      const pageH = pageW / imgRatio;  // height follows the flyer's aspect ratio
+      const pageW = 595.28, pageH = pageW / imgRatio;
       const pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:[pageW, pageH] });
-      const w = pdf.internal.pageSize.getWidth();
-      const h = pdf.internal.pageSize.getHeight();
-      const x = 0, y = 0;
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, y, w, h);
-
-      // overlay clickable link regions (Book Now / View Photos) so they work in the PDF
+      const w = pdf.internal.pageSize.getWidth(), h = pdf.internal.pageSize.getHeight();
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, w, h);
+      // Keep Calendar / View Photos clickable inside the PDF.
       const fRect = flyer.getBoundingClientRect();
       document.querySelectorAll('#flyer [data-cta]').forEach(a => {
         const href = a.getAttribute('href');
         if(!href || /REPLACE_WITH_FOLDER_ID/.test(href)) return;
         const r = a.getBoundingClientRect();
-        const lx = x + ((r.left - fRect.left) / fRect.width)  * w;
-        const ly = y + ((r.top  - fRect.top)  / fRect.height) * h;
-        const lw = (r.width  / fRect.width)  * w;
-        const lh = (r.height / fRect.height) * h;
-        pdf.link(lx, ly, lw, lh, { url: href });
+        pdf.link(((r.left-fRect.left)/fRect.width)*w, ((r.top-fRect.top)/fRect.height)*h,
+                 (r.width/fRect.width)*w, (r.height/fRect.height)*h, { url: href });
       });
-
       const name = (document.querySelector('.yacht-name').textContent || 'yacht')
-                    .trim().replace(/\s+/g,'-').toLowerCase();
+                    .trim().replace(/\s+/g,'-').toLowerCase() || 'yacht';
       const fileName = `ycn-${name}-charter.pdf`;
-      const pdfBlob = pdf.output('blob');
-      const file = new File([pdfBlob], fileName, { type:'application/pdf' });
+      const blob = pdf.output('blob');
+      return { blob, fileName, name, file: new File([blob], fileName, { type:'application/pdf' }) };
+    } finally {
+      flyer.style.transform = prevTransform; fitFlyer();
+    }
+  }
 
-      // Phone: hand the PDF to the native share sheet (WhatsApp, email, Files…).
-      // Desktop / unsupported: fall back to a normal download.
-      if(navigator.canShare && navigator.canShare({ files:[file] })){
-        try{
-          await navigator.share({ files:[file], title:`${name} — YCN Charter` });
-        }catch(err){
-          if(err && err.name !== 'AbortError') downloadBlob(pdfBlob, fileName);
-        }
+  /* ---------- Share Flyer: pick "Send to app" (WhatsApp, Mail…) or "Save to Files" ---------- */
+  const btn = document.getElementById('exportBtn');
+  const sharePanel = document.getElementById('sharePanel');
+  let pendingPdf = null;
+  const closeShare = () => { sharePanel.hidden = true; };
+
+  btn.addEventListener('click', async () => {
+    if(btn.classList.contains('busy')) return;
+    btn.classList.add('busy');
+    const original = btn.textContent; btn.textContent = 'Generating…';
+    try{
+      pendingPdf = await buildFlyerPdf();
+      // If the device can share files (phones), show the choice sheet.
+      // Otherwise (most desktops) just download the PDF.
+      if(navigator.canShare && navigator.canShare({ files:[pendingPdf.file] })){
+        sharePanel.hidden = false;
       } else {
-        downloadBlob(pdfBlob, fileName);
+        downloadBlob(pendingPdf.blob, pendingPdf.fileName);
       }
-    } catch(err){ console.error(err); alert('Export failed: ' + err.message); }
-    finally{ flyer.style.transform = prevTransform; fitFlyer(); btn.classList.remove('busy'); btn.textContent = original; }
+    } catch(err){ console.error(err); alert('Could not make the PDF: ' + err.message); }
+    finally{ btn.classList.remove('busy'); btn.textContent = original; }
   });
+
+  // "Send to app" — fires inside this fresh tap, so iOS reliably opens the share sheet
+  // (which on the phone lists WhatsApp, WhatsApp Business, Mail, Messages, Save to Files…).
+  document.getElementById('shareSend').addEventListener('click', async () => {
+    if(!pendingPdf) return;
+    closeShare();
+    try{ await navigator.share({ files:[pendingPdf.file], title:`${pendingPdf.name} — YCN Charter` }); }
+    catch(err){ if(err && err.name !== 'AbortError') downloadBlob(pendingPdf.blob, pendingPdf.fileName); }
+  });
+  // "Save to Files" — direct download (lands in Files ▸ Downloads on iPhone; Downloads on desktop)
+  document.getElementById('shareSaveFiles').addEventListener('click', () => {
+    if(!pendingPdf) return;
+    closeShare();
+    downloadBlob(pendingPdf.blob, pendingPdf.fileName);
+  });
+  document.getElementById('shareClose').addEventListener('click', closeShare);
+  sharePanel.addEventListener('click', e => { if(e.target === sharePanel) closeShare(); });
 
   /* ---------- My Boats: on-device library (localStorage, no internet needed) ---------- */
   const LS_KEY = 'ycn_boats_v1';
