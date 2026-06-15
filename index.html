@@ -216,7 +216,12 @@
     box-shadow:0 10px 30px rgba(14,116,125,.35); transition:transform .15s, box-shadow .15s;
   }
   #exportBtn{ background:var(--teal); color:#fff; border:none; }
-  #boatsBtn{ background:#fff; color:var(--teal-deep); border:1.5px solid var(--teal); }
+  #boatsBtn, #linksBtn{ background:#fff; color:var(--teal-deep); border:1.5px solid var(--teal); }
+  /* Fit all three buttons on a phone */
+  @media (max-width:760px){
+    .actions{ bottom:14px; gap:8px; width:96vw; justify-content:center; flex-wrap:wrap; }
+    .actions button{ padding:13px 18px; font-size:12px; letter-spacing:1px; box-shadow:0 6px 18px rgba(14,116,125,.3); }
+  }
 
   /* ---------- My Boats panel (on-device library) ---------- */
   .panel{
@@ -260,6 +265,11 @@
   }
   .share-primary{ border:none; background:var(--teal); color:#fff; }
   .share-secondary{ border:1.5px solid var(--teal); background:#fff; color:var(--teal-deep); }
+  .field-label{ display:block; font-size:13px; font-weight:700; color:var(--ink); margin:12px 0 6px; }
+  .field-input{
+    width:100%; padding:13px 14px; border:1.5px solid var(--line); border-radius:12px;
+    font-family:inherit; font-size:16px; color:var(--ink);
+  }
   .actions button:hover{ transform:translateY(-2px); box-shadow:0 14px 36px rgba(14,116,125,.45); }
   .actions button:active{ transform:translateY(0); }
   .actions button.busy{ opacity:.6; pointer-events:none; }
@@ -382,13 +392,13 @@
     <footer class="footer">
       <div class="footer-inner">
         <div class="cta-row">
-          <a class="cta" data-cta href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noopener">📅 Calendar</a>
-          <a class="cta outline" data-cta href="https://bit.ly/photomoltopiaciuto" target="_blank" rel="noopener">📷 View Photos</a>
+          <a class="cta" data-cta="calendar" href="" target="_blank" rel="noopener">📅 Calendar</a>
+          <a class="cta outline" data-cta="photos" href="" target="_blank" rel="noopener">📷 View Photos</a>
         </div>
         <div class="contact">
           <div class="line"><span class="val" contenteditable="true" spellcheck="false">(305) 209-3606</span></div>
           <div class="line"><span class="val" contenteditable="true" spellcheck="false">contact@ycn.miami</span></div>
-          <div class="line"><span class="val" contenteditable="true" spellcheck="false">ycn.miami</span></div>
+          <div class="line"><span class="val" contenteditable="true" spellcheck="false">www.ycn.miami/brokers</span></div>
         </div>
       </div>
     </footer>
@@ -397,8 +407,25 @@
   </div>
 
   <div class="actions">
+    <button id="linksBtn">🔗 Links</button>
     <button id="boatsBtn">🚤 My Boats</button>
     <button id="exportBtn">📤 Share Flyer</button>
+  </div>
+
+  <!-- Per-boat button links (Calendar / View Photos) -->
+  <div id="linksPanel" class="panel" hidden>
+    <div class="panel-card">
+      <div class="panel-head">
+        <strong>Button links</strong>
+        <button class="panel-close" id="linksClose" aria-label="Close">✕</button>
+      </div>
+      <p class="panel-sub">Set where the Calendar and View Photos buttons go for this boat. Saved with the boat when you save it in My Boats.</p>
+      <label class="field-label" for="linkCalendar">📅 Calendar button link</label>
+      <input id="linkCalendar" class="field-input" type="url" inputmode="url" placeholder="https://…" autocomplete="off">
+      <label class="field-label" for="linkPhotos">📷 View Photos button link</label>
+      <input id="linkPhotos" class="field-input" type="url" inputmode="url" placeholder="https://…" autocomplete="off">
+      <button id="linksSave" class="share-primary" style="margin-top:6px;">Save links</button>
+    </div>
   </div>
 
   <!-- Share choices for the flyer PDF -->
@@ -496,7 +523,12 @@
   const flyerEl = document.getElementById('flyer');
   flyerEl.addEventListener('click', e => {
     const cta = e.target.closest('[data-cta]');
-    if(cta){ if(e.altKey){ e.preventDefault(); editCtaLink(cta); } return; }
+    if(cta){
+      if(e.altKey){ e.preventDefault(); editCtaLink(cta); return; }
+      const href = (cta.getAttribute('href') || '').trim();
+      if(!href || href === '#'){ e.preventDefault(); }   // link not set yet → don't navigate
+      return;
+    }
     const slot = e.target.closest('.slot');
     if(slot){ activeSlot = slot; fileInput.click(); }
   });
@@ -589,6 +621,32 @@
   });
   document.getElementById('shareClose').addEventListener('click', closeShare);
   sharePanel.addEventListener('click', e => { if(e.target === sharePanel) closeShare(); });
+
+  /* ---------- Per-boat button links (Calendar / View Photos) ---------- */
+  const linksPanel = document.getElementById('linksPanel');
+  const linkCalendarInput = document.getElementById('linkCalendar');
+  const linkPhotosInput = document.getElementById('linkPhotos');
+  const ctaEl = kind => document.querySelector('#flyer [data-cta="'+kind+'"]');
+  const closeLinks = () => { linksPanel.hidden = true; };
+  function normalizeUrl(u){
+    u = (u || '').trim();
+    if(!u) return '';
+    if(!/^(https?:\/\/|mailto:|tel:)/i.test(u)) u = 'https://' + u;   // accept "bit.ly/xyz"
+    return u;
+  }
+  document.getElementById('linksBtn').addEventListener('click', () => {
+    linkCalendarInput.value = (ctaEl('calendar')?.getAttribute('href') || '').trim();
+    linkPhotosInput.value   = (ctaEl('photos')?.getAttribute('href')   || '').trim();
+    linksPanel.hidden = false;
+  });
+  document.getElementById('linksClose').addEventListener('click', closeLinks);
+  linksPanel.addEventListener('click', e => { if(e.target === linksPanel) closeLinks(); });
+  document.getElementById('linksSave').addEventListener('click', () => {
+    const cal = ctaEl('calendar'), ph = ctaEl('photos');
+    if(cal) cal.setAttribute('href', normalizeUrl(linkCalendarInput.value));
+    if(ph)  ph.setAttribute('href', normalizeUrl(linkPhotosInput.value));
+    closeLinks();
+  });
 
   /* ---------- My Boats: on-device library (localStorage, no internet needed) ---------- */
   const LS_KEY = 'ycn_boats_v1';
