@@ -622,6 +622,15 @@
 
   btn.addEventListener('click', async () => {
     if(btn.classList.contains('busy')) return;
+    // Warn if the Calendar / View Photos buttons have no link set — otherwise they
+    // do nothing on the shared flyer (web and PDF alike).
+    const calSet = (document.querySelector('#flyer [data-cta="calendar"]')?.getAttribute('href') || '').trim();
+    const phSet  = (document.querySelector('#flyer [data-cta="photos"]')?.getAttribute('href')   || '').trim();
+    const missing = [!calSet && 'Calendar', !phSet && 'View Photos'].filter(Boolean);
+    if(missing.length && !confirm('The ' + missing.join(' and ') + ' button' + (missing.length>1?'s have':' has') +
+       ' no link set yet, so ' + (missing.length>1?'they':'it') + ' won’t do anything when tapped.\n\nTap “Cancel”, then 🔗 Links to add the link — or OK to share anyway.')){
+      return;
+    }
     btn.classList.add('busy');
     const original = btn.textContent; btn.textContent = 'Generating…';
     try{
