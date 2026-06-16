@@ -198,19 +198,24 @@
   .cta.outline{ background:transparent; color:var(--teal-deep); border-color:var(--teal); }
   .contact{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 30px; width:100%; }
   .contact .line{ display:flex; align-items:center; font-size:16px; color:var(--ink); white-space:nowrap; max-width:100%; }
-  .contact .val{ overflow:hidden; text-overflow:ellipsis; }
   .contact .line .ck{ color:var(--teal); margin-right:9px; font-size:15px; }
-  .contact .val{ outline:none; }
+  .contact .val{ outline:none; overflow:hidden; text-overflow:ellipsis; color:var(--ink); text-decoration:none; cursor:pointer; }
+  .contact .val:hover{ color:var(--teal-deep); text-decoration:underline; }
 
   /* editable affordance (screen only) */
   [contenteditable]:hover{ background:rgba(26,155,166,.10); border-radius:4px; }
   [contenteditable]:focus{ background:rgba(26,155,166,.16); border-radius:4px; }
 
   /* ---------- Export button ---------- */
-  .actions{
-    position:fixed; bottom:26px; left:50%; transform:translateX(-50%);
-    display:flex; gap:14px; z-index:1000;
+  /* Fixed bottom bar stacks the hint ABOVE the buttons so they never overlap */
+  .bottom-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:1000;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding:8px 8px calc(10px + env(safe-area-inset-bottom));
+    pointer-events:none;            /* taps fall through the empty bar to the flyer */
   }
+  .bottom-bar > *{ pointer-events:auto; }
+  .actions{ display:flex; gap:14px; justify-content:center; }
   .actions button{
     border-radius:50px; font-family:'Montserrat',sans-serif; font-size:13px; font-weight:700;
     letter-spacing:1.5px; text-transform:uppercase; padding:12px 26px; cursor:pointer;
@@ -220,15 +225,9 @@
   #boatsBtn, #linksBtn{ background:#fff; color:var(--teal-deep); border:1.5px solid var(--teal); }
   /* Fit all three buttons on a phone */
   @media (max-width:760px){
-    .actions{ bottom:12px; gap:6px; width:100%; padding:0 8px; justify-content:center; flex-wrap:nowrap; }
+    .actions{ gap:6px; flex-wrap:nowrap; }
     .actions button{ flex:0 1 auto; min-width:0; white-space:nowrap; padding:10px 12px; font-size:10.5px; letter-spacing:.4px; box-shadow:0 6px 18px rgba(14,116,125,.3); }
-    /* lift the hint into a readable pill ABOVE the button bar */
-    .hint{
-      bottom:56px; width:auto; max-width:94vw; text-align:center; line-height:1.3;
-      font-size:10px; letter-spacing:.3px; color:#5c5346;
-      background:rgba(255,255,255,.92); padding:6px 12px; border-radius:14px;
-      box-shadow:0 2px 10px rgba(0,0,0,.10);
-    }
+    .hint{ font-size:10px; padding:6px 12px; }
   }
 
   /* ---------- My Boats panel (on-device library) ---------- */
@@ -283,8 +282,10 @@
   .actions button.busy{ opacity:.6; pointer-events:none; }
 
   .hint{
-    position:fixed; bottom:6px; left:50%; transform:translateX(-50%);
-    color:#8a7f6f; font-size:11px; letter-spacing:1px;
+    color:#5c5346; font-size:12px; letter-spacing:.3px; line-height:1.3; text-align:center;
+    max-width:min(680px,94vw);
+    background:rgba(255,255,255,.92); padding:7px 16px; border-radius:16px;
+    box-shadow:0 2px 12px rgba(0,0,0,.10);
   }
 
   /* ---------- Mobile: zoom the fixed-width poster down to fit the screen ----------
@@ -313,7 +314,7 @@
   /* ---------- Print / PDF ---------- */
   @media print{
     body{ padding:0; background:#fff; }
-    .actions, .hint{ display:none !important; }
+    .bottom-bar, .actions, .hint{ display:none !important; }
     #flyer{ box-shadow:none; width:100%; height:100vh; page-break-after:avoid; }
     @page{ size:A4 portrait; margin:0; }
   }
@@ -404,9 +405,9 @@
           <a class="cta outline" data-cta="photos" href="" target="_blank" rel="noopener">📷 View Photos</a>
         </div>
         <div class="contact">
-          <div class="line"><span class="val" contenteditable="true" spellcheck="false">(305) 209-3606</span></div>
-          <div class="line"><span class="val" contenteditable="true" spellcheck="false">contact@ycn.miami</span></div>
-          <div class="line"><span class="val" contenteditable="true" spellcheck="false">www.ycn.miami/brokers</span></div>
+          <div class="line"><a class="val" data-contact="tel" href="tel:+13052093606">(305) 209-3606</a></div>
+          <div class="line"><a class="val" data-contact="mail" href="mailto:contact@ycn.miami">contact@ycn.miami</a></div>
+          <div class="line"><a class="val" data-contact="web" href="https://www.ycn.miami/brokers" target="_blank" rel="noopener">www.ycn.miami/brokers</a></div>
         </div>
       </div>
     </footer>
@@ -414,25 +415,34 @@
   </div>
   </div>
 
-  <div class="actions">
-    <button id="linksBtn">🔗 Links</button>
-    <button id="boatsBtn">🚤 My Boats</button>
-    <button id="exportBtn">📤 Share Flyer</button>
+  <div class="bottom-bar">
+    <div class="hint">* Tap any text or photo to edit · use 🔗 Links to set the Calendar, View Photos &amp; contact details</div>
+    <div class="actions">
+      <button id="linksBtn">🔗 Links</button>
+      <button id="boatsBtn">🚤 My Boats</button>
+      <button id="exportBtn">📤 Share Flyer</button>
+    </div>
   </div>
 
   <!-- Per-boat button links (Calendar / View Photos) -->
   <div id="linksPanel" class="panel" hidden>
     <div class="panel-card">
       <div class="panel-head">
-        <strong>Button links</strong>
+        <strong>Links &amp; contact</strong>
         <button class="panel-close" id="linksClose" aria-label="Close">✕</button>
       </div>
-      <p class="panel-sub">Set where the Calendar and View Photos buttons go for this boat. Saved with the boat when you save it in My Boats.</p>
+      <p class="panel-sub">Set the buttons and contact details for this boat. Saved with the boat when you save it in My Boats.</p>
       <label class="field-label" for="linkCalendar">📅 Calendar button link</label>
       <input id="linkCalendar" class="field-input" type="url" inputmode="url" placeholder="https://…" autocomplete="off">
       <label class="field-label" for="linkPhotos">📷 View Photos button link</label>
       <input id="linkPhotos" class="field-input" type="url" inputmode="url" placeholder="https://…" autocomplete="off">
-      <button id="linksSave" class="share-primary" style="margin-top:6px;">Save links</button>
+      <label class="field-label" for="contactPhone">📞 Phone number (footer)</label>
+      <input id="contactPhone" class="field-input" type="tel" inputmode="tel" placeholder="(305) 209-3606" autocomplete="off">
+      <label class="field-label" for="contactEmail">✉️ Email (footer)</label>
+      <input id="contactEmail" class="field-input" type="email" inputmode="email" placeholder="contact@ycn.miami" autocomplete="off">
+      <label class="field-label" for="contactWeb">🌐 Website (footer)</label>
+      <input id="contactWeb" class="field-input" type="url" inputmode="url" placeholder="www.ycn.miami/brokers" autocomplete="off">
+      <button id="linksSave" class="share-primary" style="margin-top:6px;">Save</button>
     </div>
   </div>
 
@@ -469,7 +479,6 @@
       </div>
     </div>
   </div>
-  <div class="hint">Tap any text or photo to edit · Use 🔗 Links to set the Calendar &amp; View Photos buttons
 
 <script data-app>
   /* ---------- Mobile fit ----------
@@ -537,6 +546,12 @@
       if(!href || href === '#'){ e.preventDefault(); }   // link not set yet → don't navigate
       return;
     }
+    const contact = e.target.closest('[data-contact]');
+    if(contact){
+      const href = (contact.getAttribute('href') || '').trim();
+      if(!href || href === '#') e.preventDefault();      // contact not set → don't navigate
+      return;
+    }
     const slot = e.target.closest('.slot');
     if(slot){ activeSlot = slot; fileInput.click(); }
   });
@@ -573,7 +588,7 @@
       pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, w, h);
       // Keep Calendar / View Photos clickable inside the PDF.
       const fRect = flyer.getBoundingClientRect();
-      document.querySelectorAll('#flyer [data-cta]').forEach(a => {
+      document.querySelectorAll('#flyer [data-cta], #flyer [data-contact]').forEach(a => {
         const href = a.getAttribute('href');
         if(!href || /REPLACE_WITH_FOLDER_ID/.test(href)) return;
         const r = a.getBoundingClientRect();
@@ -630,11 +645,15 @@
   document.getElementById('shareClose').addEventListener('click', closeShare);
   sharePanel.addEventListener('click', e => { if(e.target === sharePanel) closeShare(); });
 
-  /* ---------- Per-boat button links (Calendar / View Photos) ---------- */
+  /* ---------- Per-boat links & contact (Calendar / Photos / phone / email / website) ---------- */
   const linksPanel = document.getElementById('linksPanel');
   const linkCalendarInput = document.getElementById('linkCalendar');
   const linkPhotosInput = document.getElementById('linkPhotos');
+  const contactPhoneInput = document.getElementById('contactPhone');
+  const contactEmailInput = document.getElementById('contactEmail');
+  const contactWebInput = document.getElementById('contactWeb');
   const ctaEl = kind => document.querySelector('#flyer [data-cta="'+kind+'"]');
+  const contactEl = kind => document.querySelector('#flyer [data-contact="'+kind+'"]');
   const closeLinks = () => { linksPanel.hidden = true; };
   function normalizeUrl(u){
     u = (u || '').trim();
@@ -642,9 +661,21 @@
     if(!/^(https?:\/\/|mailto:|tel:)/i.test(u)) u = 'https://' + u;   // accept "bit.ly/xyz"
     return u;
   }
+  function setContact(kind, text){
+    const el = contactEl(kind); if(!el) return;
+    text = (text || '').trim();
+    el.textContent = text;
+    if(!text){ el.setAttribute('href', '#'); return; }
+    if(kind === 'tel')  el.setAttribute('href', 'tel:' + text.replace(/[^\d+]/g,''));
+    if(kind === 'mail') el.setAttribute('href', 'mailto:' + text);
+    if(kind === 'web')  el.setAttribute('href', normalizeUrl(text));
+  }
   document.getElementById('linksBtn').addEventListener('click', () => {
     linkCalendarInput.value = (ctaEl('calendar')?.getAttribute('href') || '').trim();
     linkPhotosInput.value   = (ctaEl('photos')?.getAttribute('href')   || '').trim();
+    contactPhoneInput.value = (contactEl('tel')?.textContent  || '').trim();
+    contactEmailInput.value = (contactEl('mail')?.textContent || '').trim();
+    contactWebInput.value   = (contactEl('web')?.textContent  || '').trim();
     linksPanel.hidden = false;
   });
   document.getElementById('linksClose').addEventListener('click', closeLinks);
@@ -653,6 +684,9 @@
     const cal = ctaEl('calendar'), ph = ctaEl('photos');
     if(cal) cal.setAttribute('href', normalizeUrl(linkCalendarInput.value));
     if(ph)  ph.setAttribute('href', normalizeUrl(linkPhotosInput.value));
+    setContact('tel',  contactPhoneInput.value);
+    setContact('mail', contactEmailInput.value);
+    setContact('web',  contactWebInput.value);
     closeLinks();
   });
 
