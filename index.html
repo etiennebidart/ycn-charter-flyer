@@ -186,7 +186,7 @@
     display:flex; align-items:center; justify-content:center;
     padding-top:0;
   }
-  .footer-inner{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .footer-inner{ display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
   .cta-row{ display:flex; gap:14px; justify-content:center; }
   .cta{
     display:inline-flex; align-items:center; gap:8px;
@@ -196,8 +196,9 @@
     padding:14px 30px; border-radius:50px;
   }
   .cta.outline{ background:transparent; color:var(--teal-deep); border-color:var(--teal); }
-  .contact{ display:flex; align-items:center; justify-content:center; gap:40px; }
-  .contact .line{ display:flex; align-items:center; font-size:16px; color:var(--ink); }
+  .contact{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px 30px; width:100%; }
+  .contact .line{ display:flex; align-items:center; font-size:16px; color:var(--ink); white-space:nowrap; max-width:100%; }
+  .contact .val{ overflow:hidden; text-overflow:ellipsis; }
   .contact .line .ck{ color:var(--teal); margin-right:9px; font-size:15px; }
   .contact .val{ outline:none; }
 
@@ -211,16 +212,23 @@
     display:flex; gap:14px; z-index:1000;
   }
   .actions button{
-    border-radius:50px; font-family:'Montserrat',sans-serif; font-size:15px; font-weight:700;
-    letter-spacing:2px; text-transform:uppercase; padding:16px 42px; cursor:pointer;
+    border-radius:50px; font-family:'Montserrat',sans-serif; font-size:13px; font-weight:700;
+    letter-spacing:1.5px; text-transform:uppercase; padding:12px 26px; cursor:pointer;
     box-shadow:0 10px 30px rgba(14,116,125,.35); transition:transform .15s, box-shadow .15s;
   }
   #exportBtn{ background:var(--teal); color:#fff; border:none; }
   #boatsBtn, #linksBtn{ background:#fff; color:var(--teal-deep); border:1.5px solid var(--teal); }
   /* Fit all three buttons on a phone */
   @media (max-width:760px){
-    .actions{ bottom:14px; gap:8px; width:96vw; justify-content:center; flex-wrap:wrap; }
-    .actions button{ padding:13px 18px; font-size:12px; letter-spacing:1px; box-shadow:0 6px 18px rgba(14,116,125,.3); }
+    .actions{ bottom:12px; gap:6px; width:100%; padding:0 8px; justify-content:center; flex-wrap:nowrap; }
+    .actions button{ flex:0 1 auto; min-width:0; white-space:nowrap; padding:10px 12px; font-size:10.5px; letter-spacing:.4px; box-shadow:0 6px 18px rgba(14,116,125,.3); }
+    /* lift the hint into a readable pill ABOVE the button bar */
+    .hint{
+      bottom:56px; width:auto; max-width:94vw; text-align:center; line-height:1.3;
+      font-size:10px; letter-spacing:.3px; color:#5c5346;
+      background:rgba(255,255,255,.92); padding:6px 12px; border-radius:14px;
+      box-shadow:0 2px 10px rgba(0,0,0,.10);
+    }
   }
 
   /* ---------- My Boats panel (on-device library) ---------- */
@@ -461,7 +469,7 @@
       </div>
     </div>
   </div>
-  <div class="hint">Click any text to edit · Click a photo slot to upload · Right-click a button to set its link
+  <div class="hint">Tap any text or photo to edit · Use 🔗 Links to set the Calendar &amp; View Photos buttons
 
 <script data-app>
   /* ---------- Mobile fit ----------
