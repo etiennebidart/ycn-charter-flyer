@@ -187,7 +187,7 @@
     padding-top:0;
   }
   .footer-inner{ display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
-  .cta-row{ display:flex; gap:14px; justify-content:center; }
+  .cta-row{ display:flex; flex-wrap:wrap; gap:14px; justify-content:center; }
   .cta{
     display:inline-flex; align-items:center; gap:8px;
     font-family:'Montserrat',sans-serif; font-weight:700; font-size:16px;
@@ -207,7 +207,8 @@
      because html2canvas does not render display:none elements. */
   body.broker .topbar,
   body.broker .contact,
-  body.broker .contact-fields{ display:none !important; }
+  body.broker .contact-fields,
+  body.broker [data-cta="brokerweb"]{ display:none !important; }
 
   /* editable affordance (screen only) */
   [contenteditable]:hover{ background:rgba(26,155,166,.10); border-radius:4px; }
@@ -410,6 +411,7 @@
         <div class="cta-row">
           <a class="cta" data-cta="calendar" href="" target="_blank" rel="noopener">📅 Calendar</a>
           <a class="cta outline" data-cta="photos" href="" target="_blank" rel="noopener">📷 View Photos</a>
+          <a class="cta outline" data-cta="brokerweb" href="https://ycn.miami/brokers" target="_blank" rel="noopener">🌐 YCN Broker Web</a>
         </div>
         <div class="contact">
           <div class="line"><a class="val" data-contact="tel" href="tel:+13052093606">(305) 209-3606</a></div>
